@@ -31,18 +31,38 @@ import './Board.css';
 
 class Board extends Component {
 
+  static defaultProps = {
+    nrows: 5,
+    ncols: 5,
+    chanceLightStartsOn: 0.7
+  }
   constructor(props) {
     super(props);
-
-    // TODO: set initial state
+    this.state = {
+      hasWon: false,
+      board: this.createBoard(this.props.nrows, this.props.ncols)
+    }
   }
 
-  /** create a board nrows high/ncols wide, each cell randomly lit or unlit */
+  /** create a board nrows high/ncols wide, each cell randomly lit or unlit 
+   * lit: true; unlit: false;
+  */
 
-  createBoard() {
+  createBoard(rows, cols) {
     let board = [];
-    // TODO: create array-of-arrays of true/false values
-    return board
+    for (let r = 0; r < rows; r++) {
+      let row = [];
+      for (let c = 0; c < cols; c++) {
+        row.push(this.randomTrueFalse(this.props.chanceLightStartsOn));
+      }
+      board.push(row);
+    }
+    return board;
+  }
+
+  /** given a float number representing chance, return true/false */
+  randomTrueFalse(chance) {
+    return chance > Math.random() ? true : false;
   }
 
   /** handle changing a cell: update board & determine if winner */
@@ -50,21 +70,33 @@ class Board extends Component {
   flipCellsAround(coord) {
     let {ncols, nrows} = this.props;
     let board = this.state.board;
+    let hasWon = this.state.hasWon;
     let [y, x] = coord.split("-").map(Number);
-
 
     function flipCell(y, x) {
       // if this coord is actually on board, flip it
-
       if (x >= 0 && x < ncols && y >= 0 && y < nrows) {
         board[y][x] = !board[y][x];
       }
     }
 
-    // TODO: flip this cell and the cells around it
+    // flip this cell and the cells around it
+    flipCell(y, x);
+    flipCell(y - 1, x);
+    flipCell(y + 1, x);
+    flipCell(y, x - 1);
+    flipCell(y, x + 1);
 
     // win when every cell is turned off
-    // TODO: determine is the game has been won
+    let trackRows = [];
+    for (let row of board) {
+      if(!row.includes(true)){
+        trackRows.push(false);
+      }
+    }
+    if (trackRows.length === ncols && !trackRows.includes(true)){
+      hasWon = true;
+    }
 
     this.setState({board, hasWon});
   }
@@ -75,12 +107,29 @@ class Board extends Component {
   render() {
 
     // if the game is won, just show a winning msg & render nothing else
-
-    // TODO
-
+    if (this.state.hasWon) {
+      return (
+        <div className="alert">
+          <h4>You won!</h4>
+        </div>
+      )
+    }
     // make table board
-
-    // TODO
+    return (
+        <table className="Board">
+          <tbody>
+            { this.state.board.map(
+              (row, y) => (<tr key={y}>
+              { row.map(
+                (cell, x) => (
+                <Cell isLit={cell} 
+                      key={`${y}-${x}`} 
+                      flipCellsAroundMe={ () => this.flipCellsAround(`${y}-${x}`)}
+                /> ))}
+            </tr>))}
+          </tbody>
+        </table>
+    );
   }
 }
 
